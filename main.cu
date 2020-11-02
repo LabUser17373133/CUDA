@@ -28,7 +28,7 @@ int main()
     cudaMemcpy(A_h, A_d, sizeof(A_h), cudaMemcpyDeviceToHost);
     cudaMemcpy(B_h, B_d, sizeof(B_h), cudaMemcpyDeviceToHost);
     cudaMemcpy(C_h, C_d, sizeof(C_h), cudaMemcpyDeviceToHost);
-    printf("%f, %f, %f\n", C_h[0], C_h[1], C_h[2]);
+    printf("%f, %f, %f\n", C_h[0], C_h[1] , C_h[2]);
     cudaDeviceReset();
     return 0;
 }
