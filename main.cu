@@ -16,6 +16,7 @@ int main()
     float B_h[] = { 1, 2, 3 };
     float C_h[] = { 3, 2, 1 };
     
+    
     float *A_d, *B_d, *C_d;
     cudaMalloc((float**)&A_d, sizeof(A_h));
     cudaMalloc((float**)&B_d, sizeof(B_h));
