@@ -1,9 +1,9 @@
-#include "stldata.h"
+﻿#include "stldata.h"
 
 
 stlData::stlData()
 {
-
+    
 }
 
 /*读取stl(二进制)*/
