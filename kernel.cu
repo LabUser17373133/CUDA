@@ -39,18 +39,18 @@ double AT_Orig_z = 2;
 void data2Target(double* tar, stlData dat, int N_f)
 {
     for (int i = 0; i < N_f; i++) {
-        double* tar_p = &tar[i * 6];  
+        double* tar_ptr = &tar[i * 6];  
         stlVert* v_p = &dat.m_vert[i * 3];    
         double c_x, c_y, c_z;       // 中心点坐标m
         c_x = (v_p[0].x + v_p[1].x + v_p[2].x) / 3 / 10;    // 求中心坐标并缩放
         c_y = (v_p[0].y + v_p[1].y + v_p[2].y) / 3 / 10;
         c_z = (v_p[0].z + v_p[1].z + v_p[2].z) / 3 / 10;
-        *tar_p = c_x;
-        *(tar_p + 1) = c_y;
-        *(tar_p + 2) = c_z;
-        *(tar_p + 3) = dat.m_norm[i].x;     // 法线向量
-        *(tar_p + 4) = dat.m_norm[i].y;
-        *(tar_p + 5) = dat.m_norm[i].z;
+        *tar_ptr = c_x;
+        *(tar_ptr + 1) = c_y;
+        *(tar_ptr + 2) = c_z;
+        *(tar_ptr + 3) = dat.m_norm[i].x;     // 法线向量
+        *(tar_ptr + 4) = dat.m_norm[i].y;
+        *(tar_ptr + 5) = dat.m_norm[i].z;
     }
 }
 
@@ -144,7 +144,7 @@ __global__ void Illumination_Area_Calculation(double* Target, double* Weight, do
 
 
 
-
+1
 
 int main()
 {
