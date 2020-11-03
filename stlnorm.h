@@ -1,4 +1,4 @@
-#ifndef STLNORM_H
+﻿#ifndef STLNORM_H
 #define STLNORM_H
 
 //法线向量坐标
