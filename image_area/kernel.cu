@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -6,41 +5,36 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <complex>
+#include <stdio.h>
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include "device_functions.h"
-#include <stdio.h>
 #include "stlvert.h"
 #include "stldata.h"
 #include "stlnorm.h"
 
-
 //GPU线程分配
-#define threadsPerBlock 512
-#define BlockPergrid 65536
-
+#define threadsPerBlock 256
+#define BlockPergrid 16384
 
 // 几何参数
 int N = 1024;               // 总面数
-int N_TX = 1024;			// 发射天线总采样点数               
-int N_RX = 1024;			// 接收天线总采样点数
+int N_TX = 4096;			// 发射天线总采样点数               
+int N_RX = 4096;			// 接收天线总采样点数
 
 double* Targets;            // 目标物体的几何数据;6个一组, 3个面心坐标x, y, z(m), 3个法线向量坐标vx, vy, vz(m)
 double* Transmitters_P;     // 发射天线坐标数据, 3个一组x,y,z(m)
 double* Receivers_P;        // 接收天线坐标数据, 3个一组x,y,z(m)
 int* Weights;				// 面的权重
-double Angle = 15;			// 角度阈值(rad)
+double Angle = 15;			// 角度阈值(度)
 
 // 天线参数 
 double AT_Height = 2;       // 天线的高度(m)
-double AT_Width = 1;        // 天线的宽度(m)
-double AT_Orig_x = -0.5;    // 天线阵列采样起点(m)
+double AT_Width = 1.5;      // 天线的宽度(m)
+double AT_Orig_x = -0.75;   // 天线阵列采样起点(m)
 double AT_Orig_y = 0;
-double AT_Orig_z = 2;
-
-
-
+double AT_Orig_z = 2 * sqrt(2.0);
 
 
 // STL数据转数组 
@@ -63,7 +57,6 @@ void data2Target(double* tar, stlData dat, int N_f)
 	}
 }
 
-
 // 天线位置坐标初始化 
 // p 天线点数组; N_s 采样点数; w, h 宽和高(m); o_() 原点坐标(m)
 void initAntenna(double* p, int N_s, double w, double h, double o_x, double o_y, double o_z)
@@ -75,16 +68,15 @@ void initAntenna(double* p, int N_s, double w, double h, double o_x, double o_y,
 	dx = w / N_w;						// 采样间隔
 	dy = h / N_h;
 	dz = 0;
-	for (int i = 0; i < N_s ; i++) {   // 平面矩阵遍历
+	for (int i = 0; i < N_s; i++) {   // 平面矩阵遍历
 		double* p_ptr = &p[i * 3];
-		int m = i % N_w;			   
+		int m = i % N_w;
 		int n = i / N_h;
 		*p_ptr = x + m * dx;
 		*(p_ptr + 1) = y + n * dy;
 		*(p_ptr + 2) = z + dz;
 	}
 }
-
 
 // 判断接收天线的位置是否在阈值角度内;
 // 是返回1,不是返回0
@@ -214,6 +206,15 @@ void Exposure_Weights(double* Targets, double* Transmitters, double* Receivers, 
 	cudaFree(dev_Num_Targets);
 	cudaFree(dev_Num_Transmitters);
 	cudaFree(dev_Num_Receivers);
+
+	//将数据写进文件里面
+	FILE* fid_Weights;
+	fid_Weights = fopen("Weights.txt", "w");
+
+	for (int i = 0; i < *Num_Targets; i++)
+		fprintf(fid_Weights, "%d\n", Weights[i]);
+
+	fclose(fid_Weights);
 }
 
 
@@ -236,13 +237,10 @@ int main()
 	initAntenna(Transmitters_P, N_TX, AT_Width, AT_Height, AT_Orig_x, AT_Orig_y, AT_Orig_z);
 	initAntenna(Receivers_P, N_RX, AT_Width, AT_Height, AT_Orig_x, AT_Orig_y, AT_Orig_z);
 
-	
-
-	Exposure_Weights(Targets, Transmitters_P, Receivers_P, Weights, &Angle, &N, &N_TX,  &N_RX);
-	
+	Exposure_Weights(Targets, Transmitters_P, Receivers_P, Weights, &Angle, &N, &N_TX, &N_RX);
 
 	for (int i = 0; i < N; i++) {
-		printf("%d\n", Weights[i]);
+		printf("%d %d\n", i, Weights[i]);
 	}
 	return 0;
 }
@@ -250,7 +248,7 @@ int main()
 
 
 //************* 验证数据 ***************//
- 
+
 // 发射天线坐标
 //for (int i = 0; i < N_TX; i++)
 //{
