@@ -23,14 +23,14 @@
 
 // 几何参数
 int N = 1024;               // 总面数
-int N_TX = 256;               // 发射天线采样点               
-int N_RX = 256;               // 接收天线采样点
+int N_TX = 1024;			// 发射天线总采样点数               
+int N_RX = 1024;			// 接收天线总采样点数
 
 double* Targets;            // 目标物体的几何数据;6个一组, 3个面心坐标x, y, z(m), 3个法线向量坐标vx, vy, vz(m)
 double* Transmitters_P;     // 发射天线坐标数据, 3个一组x,y,z(m)
 double* Receivers_P;        // 接收天线坐标数据, 3个一组x,y,z(m)
-int* Weights;            // 面的权重
-double Angle = 15;          // 角度阈值(rad)
+int* Weights;				// 面的权重
+double Angle = 15;			// 角度阈值(rad)
 
 // 天线参数 
 double AT_Height = 2;       // 天线的高度(m)
@@ -50,7 +50,7 @@ void data2Target(double* tar, stlData dat, int N_f)
 	for (int i = 0; i < N_f; i++) {
 		double* tar_ptr = &tar[i * 6];
 		stlVert* v_p = &dat.m_vert[i * 3];
-		double c_x, c_y, c_z;       // 中心点坐标m
+		double c_x, c_y, c_z;       // 中心点坐标(m)
 		c_x = (v_p[0].x + v_p[1].x + v_p[2].x) / 3 / 10;    // 求中心坐标并缩放
 		c_y = (v_p[0].y + v_p[1].y + v_p[2].y) / 3 / 10;
 		c_z = (v_p[0].z + v_p[1].z + v_p[2].z) / 3 / 10;
@@ -69,14 +69,16 @@ void data2Target(double* tar, stlData dat, int N_f)
 void initAntenna(double* p, int N_s, double w, double h, double o_x, double o_y, double o_z)
 {
 	double x, y, z, dx, dy, dz;
-	x = o_x; y = o_y; z = o_z;      // 天线原点坐标
-	dx = w / N_s;                   // 采样间隔
-	dy = h / N_s;
+	x = o_x; y = o_y; z = o_z;			// 天线原点坐标
+	int N_w = (int)(sqrt((double)N_s)); // 长宽的采样点数
+	int N_h = (int)(sqrt((double)N_s));
+	dx = w / N_w;						// 采样间隔
+	dy = h / N_h;
 	dz = 0;
-	for (int i = 0; i < N_s * N_s; i++) {   // 平面矩阵遍历
+	for (int i = 0; i < N_s ; i++) {   // 平面矩阵遍历
 		double* p_ptr = &p[i * 3];
-		int m = i % N_s;
-		int n = i / N_s;
+		int m = i % N_w;			   
+		int n = i / N_h;
 		*p_ptr = x + m * dx;
 		*(p_ptr + 1) = y + n * dy;
 		*(p_ptr + 2) = z + dz;
@@ -215,7 +217,9 @@ void Exposure_Weights(double* Targets, double* Transmitters, double* Receivers, 
 }
 
 
-
+//***********************************
+//********** Main Code **************
+//***********************************
 int main()
 {
 	stlData m_stl;                                      // STL文件数据的类
@@ -224,13 +228,15 @@ int main()
 	Targets = (double*)malloc(sizeof(double) * N * 6);
 	data2Target(Targets, m_stl, N);                     // STL数据转换到一维数组
 	Weights = (int*)malloc(sizeof(int) * N);
-	std::fill(Weights, Weights + N, 0);                   // 权重清零  
-	Transmitters_P = (double*)malloc(sizeof(double) * N_TX * N_TX * 3);
-	Receivers_P = (double*)malloc(sizeof(double) * N_RX * N_RX * 3);
+	std::fill(Weights, Weights + N, 0);                 // 权重清零  
+	Transmitters_P = (double*)malloc(sizeof(double) * N_TX * 3);
+	Receivers_P = (double*)malloc(sizeof(double) * N_RX * 3);
 
 	//初始化天线坐标
 	initAntenna(Transmitters_P, N_TX, AT_Width, AT_Height, AT_Orig_x, AT_Orig_y, AT_Orig_z);
 	initAntenna(Receivers_P, N_RX, AT_Width, AT_Height, AT_Orig_x, AT_Orig_y, AT_Orig_z);
+
+	
 
 	Exposure_Weights(Targets, Transmitters_P, Receivers_P, Weights, &Angle, &N, &N_TX,  &N_RX);
 	
@@ -240,3 +246,21 @@ int main()
 	}
 	return 0;
 }
+
+
+
+//************* 验证数据 ***************//
+ 
+// 发射天线坐标
+//for (int i = 0; i < N_TX; i++)
+//{
+//	double* ptr = &Transmitters_P[i * 3];
+//	printf("%f  %f  %f\n", ptr[0], ptr[1], ptr[2]);
+//}
+
+// 接收天线坐标
+//for (int i = 0; i < N_TX; i++)
+//{
+//	double* ptr = &Receivers_P[i * 3];
+//	printf("%f  %f  %f\n", ptr[0], ptr[1], ptr[2]);
+//}
