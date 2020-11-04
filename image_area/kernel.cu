@@ -20,8 +20,8 @@
 
 // 几何参数
 int N = 1024;               // 总面数
-int N_TX = 4096;			// 发射天线总采样点数               
-int N_RX = 4096;			// 接收天线总采样点数
+int N_TX = 256;			// 发射天线总采样点数               
+int N_RX = 256;			// 接收天线总采样点数
 
 double* Targets;            // 目标物体的几何数据;6个一组, 3个面心坐标x, y, z(m), 3个法线向量坐标vx, vy, vz(m)
 double* Transmitters_P;     // 发射天线坐标数据, 3个一组x,y,z(m)
@@ -30,11 +30,18 @@ int* Weights;				// 面的权重
 double Angle = 15;			// 角度阈值(度)
 
 // 天线参数 
+//double AT_Height = 2;       // 天线的高度(m)
+//double AT_Width = 1;        // 天线的宽度(m)
+//double AT_Orig_x = -0.5;    // 天线阵列采样起点(m)
+//double AT_Orig_y = 0;
+//double AT_Orig_z = 2;
+
+// 天线参数 
 double AT_Height = 2;       // 天线的高度(m)
-double AT_Width = 1.5;      // 天线的宽度(m)
-double AT_Orig_x = -0.75;   // 天线阵列采样起点(m)
+double AT_Width = 1.5;        // 天线的宽度(m)
+double AT_Orig_x = -0.75;    // 天线阵列采样起点(m)
 double AT_Orig_y = 0;
-double AT_Orig_z = 2 * sqrt(2.0);
+double AT_Orig_z = 2;
 
 
 // STL数据转数组 
@@ -109,7 +116,7 @@ __device__ int is_Reflect(double* Target, double* Transmitter, double* Receiver,
 	double temp3 = Reflected_Light[0] * Received_Light[0] + Reflected_Light[1] * Received_Light[1] + Reflected_Light[2] * Received_Light[2];        //R1*R2
 	double temp4 = sqrt(pow(Reflected_Light[0], 2) + pow(Reflected_Light[1], 2) + pow(Reflected_Light[2], 2)) * sqrt(pow(Received_Light[0], 2) + pow(Received_Light[1], 2) + pow(Received_Light[2], 2)); //|R1|*|R2|
 
-	if (temp3 > temp4 * Threshold)			//角度小于阈值角度
+	if (temp3 > temp4* Threshold)			//角度小于阈值角度
 		return 1;
 	else
 		return 0;
@@ -172,14 +179,14 @@ void Exposure_Weights(double* Targets, double* Transmitters, double* Receivers, 
 	int* dev_Weights, * dev_Num_Targets, * dev_Num_Transmitters, * dev_Num_Receivers;
 
 	//为设备中数据开辟空间
-	cudaMalloc((void**)& dev_Targets, *Num_Targets * 6 * sizeof(double));
-	cudaMalloc((void**)& dev_Transmitters, *Num_Transmitters * 3 * sizeof(double));
-	cudaMalloc((void**)& dev_Receivers, *Num_Receivers * 3 * sizeof(double));
-	cudaMalloc((void**)& dev_Angle, sizeof(double));
-	cudaMalloc((void**)& dev_Weights, *Num_Targets * sizeof(int));
-	cudaMalloc((void**)& dev_Num_Targets, sizeof(int));
-	cudaMalloc((void**)& dev_Num_Transmitters, sizeof(int));
-	cudaMalloc((void**)& dev_Num_Receivers, sizeof(int));
+	cudaMalloc((void**)&dev_Targets, *Num_Targets * 6 * sizeof(double));
+	cudaMalloc((void**)&dev_Transmitters, *Num_Transmitters * 3 * sizeof(double));
+	cudaMalloc((void**)&dev_Receivers, *Num_Receivers * 3 * sizeof(double));
+	cudaMalloc((void**)&dev_Angle, sizeof(double));
+	cudaMalloc((void**)&dev_Weights, *Num_Targets * sizeof(int));
+	cudaMalloc((void**)&dev_Num_Targets, sizeof(int));
+	cudaMalloc((void**)&dev_Num_Transmitters, sizeof(int));
+	cudaMalloc((void**)&dev_Num_Receivers, sizeof(int));
 
 	//复制数据
 	cudaMemcpy(dev_Targets, Targets, *Num_Targets * 6 * sizeof(double), cudaMemcpyHostToDevice);
@@ -224,7 +231,7 @@ void Exposure_Weights(double* Targets, double* Transmitters, double* Receivers, 
 int main()
 {
 	stlData m_stl;                                      // STL文件数据的类
-	m_stl.readSTL("man05.stl");							// 读STL文件
+	m_stl.readSTL("man04.stl");							// 读STL文件
 	N = m_stl.N_face;                                   // 获取总面数
 	Targets = (double*)malloc(sizeof(double) * N * 6);
 	data2Target(Targets, m_stl, N);                     // STL数据转换到一维数组
@@ -244,21 +251,3 @@ int main()
 	}
 	return 0;
 }
-
-
-
-//************* 验证数据 ***************//
-
-// 发射天线坐标
-//for (int i = 0; i < N_TX; i++)
-//{
-//	double* ptr = &Transmitters_P[i * 3];
-//	printf("%f  %f  %f\n", ptr[0], ptr[1], ptr[2]);
-//}
-
-// 接收天线坐标
-//for (int i = 0; i < N_TX; i++)
-//{
-//	double* ptr = &Receivers_P[i * 3];
-//	printf("%f  %f  %f\n", ptr[0], ptr[1], ptr[2]);
-//}
